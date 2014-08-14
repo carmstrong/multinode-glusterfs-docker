@@ -1,35 +1,34 @@
-# Make sure rpcbind is started - GlusterNFS would complain
-## RPC bind service will complain about Locale files but ignore
-service rpcbind start
+#!/bin/bash
+VOLUME=${VOLUME:-glustertest}
+IPADDR=$(hostname -i)
 
-## Change this to your name if necessary
-VOLUME=glustertest
-
-## Start Gluster Management Daemon
-service glusterd start
-
-if [ -z $VOLUME ]; then
-  ## Check if volume is null
-  service glusterd stop
-  exit 255
-fi
-
-if [ "$MASTER" ]; then
+# only create the volume if we're the master
+if [ "$MASTER" == "$IPADDR" ]; then
   if [ ! -d "/var/lib/glusterd/vols/$VOLUME" ]; then
-    while ! gluster --mode=script peer probe gluster2.local.docker || ! gluster --mode=script peer probe gluster3.local.docker; do
-      sleep 1;
+    READY=0
+    while [ "$READY" -eq 0 ]; do
+      READY=1
+      for peer in $PEERS; do
+        if [ "$peer" != "$IPADDR" ]; then
+          gluster --mode=script peer probe $PEER
+          if [ $? -eq 0 ]; then
+            READY=0
+          fi
+        fi
+      done
+      sleep 5;
     done
     ## Always create a sub-directory inside a mount-point
-    gluster --mode=script --wignore volume create $VOLUME replica 2 transport tcp gluster1.local.docker:/exp1 gluster2.local.docker:/exp2 gluster3.local.docker:/exp3
+    gluster --mode=script --wignore volume create $VOLUME replica 2 transport tcp $MOUNTS
   fi
   gluster --mode=script --wignore volume start $VOLUME force
 fi
 
 shutdown_gluster()
 {
-  service glusterd stop
+  stop glusterfs-server
   exit $?
 }
 
 trap shutdown_gluster SIGINT
-while true; do sleep 1; done
+while true; do sleep 60; done

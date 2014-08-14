@@ -5,72 +5,11 @@ coreos:
     addr: $public_ipv4:4001
     peer-addr: $public_ipv4:7001
   units:
-    - name: docker.service
-      content: |
-        [Unit]
-        Description=Docker Application Container Engine
-        Documentation=http://docs.docker.io
-        Requires=docker.socket
-
-        [Service]
-        Environment="TMPDIR=/var/tmp/"
-        ExecStartPre=/bin/mount --make-rprivate /
-        LimitNOFILE=1048576
-        LimitNPROC=1048576
-        # Run docker but don't have docker automatically restart
-        # containers. This is a job for systemd and unit files.
-        ExecStart=/usr/bin/docker -d -s=btrfs --bip=172.17.42.1/16 --dns=172.17.42.1 -r=false -H fd://
-
-        [Install]
-        WantedBy=multi-user.target
-    - name: skydns.service
+    - name: gluster-volume.service
       command: start
       content: |
         [Unit]
-        Description=skydns
-        Requires=docker.socket
+        Description=A member of the GlusterFS cluster.
 
         [Service]
-        ExecStartPre=/usr/bin/docker pull crosbymichael/skydns:latest
-        ExecStart=/usr/bin/docker run -d -p 172.17.42.1:53:53/udp --name skydns crosbymichael/skydns:latest -nameserver 8.8.8.8:53 -domain docker
-    - name: skydock.service
-      command: start
-      content: |
-        [Unit]
-        Description=skydock
-        Requires=skydns.service
-        After=skydns.service
-
-        [Service]
-        ExecStartPre=/usr/bin/docker pull crosbymichael/skydock:latest
-        ExecStart=/usr/bin/docker run -d -v /var/run/docker.sock:/docker.sock --name skydock crosbymichael/skydock:latest -ttl 30 -environment local -s /docker.sock -domain docker -name skydns
-    - name: gluster1.service
-      command: start
-      content: |
-        [Unit]
-        Description=gluster1
-        Requires=skydock.service
-        After=skydock.service
-
-        [Service]
-        ExecStart=/usr/bin/docker run -h gluster1 --rm --name gluster1 -e MASTER=1 carmstrong/multinode-glusterfs:latest
-    - name: gluster2.service
-      command: start
-      content: |
-        [Unit]
-        Description=gluster2
-        Requires=skydock.service
-        After=skydock.service
-
-        [Service]
-        ExecStart=/usr/bin/docker run -h gluster2 --rm --name gluster2 carmstrong/multinode-glusterfs:latest
-    - name: gluster3.service
-      command: start
-      content: |
-        [Unit]
-        Description=gluster3
-        Requires=skydock.service
-        After=skydock.service
-
-        [Service]
-        ExecStart=/usr/bin/docker run -h gluster3 --rm --name gluster3 carmstrong/multinode-glusterfs:latest
+        ExecStart=/usr/bin/docker run -P --name gluster -e MASTER=172.21.12.10 -e PEERS="172.21.12.10 172.21.12.11 172.21.12.12" MOUNTS="172.21.12.10:/brick 172.21.12.11:/brick 172.21.12.12:/brick" carmstrong/multinode-glusterfs:latest

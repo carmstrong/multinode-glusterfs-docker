@@ -26,9 +26,12 @@ Vagrant.configure("2") do |config|
     config.vbguest.auto_update = false
   end
 
-  config.vm.define vm_name = "multi-node-glusterfs" do |config|
-    config.vm.hostname = vm_name
-    config.vm.provision :file, :source => File.join(File.dirname(__FILE__), "user-data"), :destination => "/tmp/vagrantfile-user-data"
-    config.vm.provision :shell, :inline => "mv /tmp/vagrantfile-user-data /var/lib/coreos-vagrant/", :privileged => true
+  (1..3).each do |i|
+    config.vm.define vm_name = "gluster-#{i}" do |config|
+      config.vm.hostname = vm_name
+      config.vm.network :private_network, ip: "172.21.12.#{i+9}"
+      config.vm.provision :file, :source => File.join(File.dirname(__FILE__), "user-data"), :destination => "/tmp/vagrantfile-user-data"
+      config.vm.provision :shell, :inline => "mv /tmp/vagrantfile-user-data /var/lib/coreos-vagrant/", :privileged => true
+    end
   end
 end
