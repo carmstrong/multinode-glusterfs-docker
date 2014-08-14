@@ -15,10 +15,10 @@ if [ -z $VOLUME ]; then
 fi
 
 if [ "$MASTER" ]; then
-  while !gluster --mode=script --wignore peer probe gluster2.local.docker && !gluster --mode=script --wignore peer probe gluster3.local.docker; do
-    sleep 1;
-  done
   if [ ! -d "/var/lib/glusterd/vols/$VOLUME" ]; then
+    while ! gluster --mode=script peer probe gluster2.local.docker || ! gluster --mode=script peer probe gluster3.local.docker; do
+      sleep 1;
+    done
     ## Always create a sub-directory inside a mount-point
     gluster --mode=script --wignore volume create $VOLUME replica 2 transport tcp gluster1.local.docker:/exp1 gluster2.local.docker:/exp2 gluster3.local.docker:/exp3
   fi
