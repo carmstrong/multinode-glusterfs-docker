@@ -23,7 +23,7 @@ coreos:
 
         [Install]
         WantedBy=multi-user.target
-    - name skydns.service
+    - name: skydns.service
       command: start
       content: |
         [Unit]
@@ -53,7 +53,7 @@ coreos:
         After=skydock.service
 
         [Service]
-        ExecStart=/usr/bin/docker run -h gluster1 --name gluster1 -e MASTER=1 carmstrong/multi-node-glusterfs:latest
+        ExecStart=/usr/bin/docker run -h gluster1 --name gluster1 -e MASTER=1 carmstrong/multinode-glusterfs:latest
     - name: gluster2.service
       command: start
       content: |
@@ -63,7 +63,7 @@ coreos:
         After=skydock.service
 
         [Service]
-        ExecStart=/usr/bin/docker run -h gluster2 --name gluster2 carmstrong/multi-node-glusterfs:latest
+        ExecStart=/usr/bin/docker run -h gluster2 --name gluster2 carmstrong/multinode-glusterfs:latest
     - name: gluster3.service
       command: start
       content: |
@@ -73,4 +73,4 @@ coreos:
         After=skydock.service
 
         [Service]
-        ExecStart=/usr/bin/docker run -h gluster3 --name gluster3 carmstrong/multi-node-glusterfs:latest
+        ExecStart=/usr/bin/docker run -h gluster3 --name gluster3 carmstrong/multinode-glusterfs:latest
